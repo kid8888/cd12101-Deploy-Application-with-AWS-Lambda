@@ -1,25 +1,21 @@
-import AWS from 'aws-sdk';
-import { createLogger } from '../utils/logger.mjs';
+import { PutObjectCommand, S3Client } from '@aws-sdk/client-s3'
+import { getSignedUrl } from '@aws-sdk/s3-request-presigner'
 
-import AWSXRay from 'aws-xray-sdk-core';
-const XAWS = AWSXRay.captureAWS(AWS);
-const log = createLogger('AttachmentUtils');
+const s3Client = new S3Client()
+const bucketName = process.env.ATTACHMENT_S3_BUCKET
+const urlExpiration = parseInt(process.env.SIGNED_URL_EXPIRATION)
 
-export class S3AttachmentHelper {
-  constructor() {
-    this.s3Client = new XAWS.S3({ signatureVersion: 'v4' });
-    this.bucketName = process.env.ATTACHMENT_S3_BUCKET;
-    this.urlExpiration = parseInt(process.env.SIGNED_URL_EXPIRATION);
-  }
+export async function getUploadUrl(todoId) {
+    const command = new PutObjectCommand({
+        Bucket: bucketName,
+        Key: todoId
+    })
+    const url = await getSignedUrl(s3Client, command, {
+        expiresIn: urlExpiration
+    })
+    return url
+}
 
-  async generatePresignedUrl(attachmentId) {
-    const presignedUrl = this.s3Client.getSignedUrl('putObject', {
-      Bucket: this.bucketName,
-      Key: attachmentId,
-      Expires: this.urlExpiration,
-    });
-
-    log.info(`Presigned URL generated: ${presignedUrl}`);
-    return presignedUrl;
-  }
+export function getPublicUrl(todoId) {
+    return `https://${bucketName}.s3.amazonaws.com/${todoId}`
 }

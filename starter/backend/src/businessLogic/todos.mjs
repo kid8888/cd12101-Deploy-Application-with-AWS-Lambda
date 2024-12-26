@@ -5,7 +5,7 @@ import * as uuid from 'uuid'
 const log = createLogger('TodosService')
 const todosAccess = new TodosAccess()
 
-export const createTodo = async (todoData, userId) => {
+export const createTodo = async (userId, todoData) => {
   if (!userId) {
     log.info('User not authenticated')
     return false
@@ -55,4 +55,7 @@ export const deleteTodo = async (userId, todoId) => {
   }
   await todosAccess.remove(userId, todoId)
   return true
+}
+export async function getTodo(userId, todoId) {
+  return await todoAccess.getTodo(userId, todoId)
 }

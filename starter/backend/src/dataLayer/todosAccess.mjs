@@ -89,4 +89,18 @@ export class TodosAccess {
     }).promise();
     log.info('Todo item deleted successfully');
   }
+
+  async getTodo(userId, todoId) {
+    console.log(`Getting a todo with id ${todoId}`)
+
+    const result = await this.dynamoDbClient.get({
+        TableName: this.todosTable,
+        Key: {
+            userId,
+            todoId
+        }
+    })
+
+    return result.Item
+  }
 }
