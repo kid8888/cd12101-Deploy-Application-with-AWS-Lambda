@@ -57,5 +57,5 @@ export const deleteTodo = async (userId, todoId) => {
   return true
 }
 export async function getTodo(userId, todoId) {
-  return await todoAccess.getTodo(userId, todoId)
+  return await todosAccess.getTodo(userId, todoId)
 }

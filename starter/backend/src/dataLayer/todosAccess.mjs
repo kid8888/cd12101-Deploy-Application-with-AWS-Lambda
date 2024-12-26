@@ -63,24 +63,32 @@ export class TodosAccess {
   }
 
   async update(userId, todoId, updatedTodo) {
+    if (!updatedTodo || Object.keys(updatedTodo).length === 0) {
+      throw new Error('Updated attributes must not be empty');
+    }
+  
+    const updateExpressions = [];
+    const expressionAttributeNames = {};
+    const expressionAttributeValues = {};
+  
+    for (const [key, value] of Object.entries(updatedTodo)) {
+      updateExpressions.push(`#${key} = :${key}`);
+      expressionAttributeNames[`#${key}`] = key;
+      expressionAttributeValues[`:${key}`] = value;
+    }
+  
+    const updateExpression = `set ${updateExpressions.join(', ')}`;
+  
     await this.dynamoDB.update({
       TableName: this.todoTable,
       Key: { todoId, userId },
-      UpdateExpression: 'set #name = :name, #dueDate = :dueDate, #done = :done',
-      ExpressionAttributeNames: {
-        '#name': 'name',
-        '#dueDate': 'dueDate',
-        '#done': 'done',
-      },
-      ExpressionAttributeValues: {
-        ':name': updatedTodo.name,
-        ':dueDate': updatedTodo.dueDate,
-        ':done': updatedTodo.done,
-      },
+      UpdateExpression: updateExpression,
+      ExpressionAttributeNames: expressionAttributeNames,
+      ExpressionAttributeValues: expressionAttributeValues,
     }).promise();
-
-    log.info('Todo item updated successfully', updatedTodo);
-  }
+  
+    log.info('Todo item updated successfully', { userId, todoId, updatedTodo });
+  }  
 
   async remove(userId, todoId) {
     await this.dynamoDB.delete({
@@ -91,16 +99,27 @@ export class TodosAccess {
   }
 
   async getTodo(userId, todoId) {
-    console.log(`Getting a todo with id ${todoId}`)
+    log.info(`Getting a todo with id ${todoId} for user ${userId}`);
 
-    const result = await this.dynamoDbClient.get({
-        TableName: this.todosTable,
+    try {
+      const result = await this.dynamoDB.get({
+        TableName: this.todoTable,
         Key: {
-            userId,
-            todoId
+          userId,
+          todoId
         }
-    })
+      }).promise();
 
-    return result.Item
+      if (!result.Item) {
+        log.warn(`Todo with id ${todoId} for user ${userId} not found`);
+        return null;
+      }
+
+      log.info('Todo fetched successfully', result.Item);
+      return result.Item;
+    } catch (error) {
+      log.error('Error fetching todo', { error });
+      throw new Error(`Error fetching todo: ${error.message}`);
+    }
   }
 }
