@@ -10,7 +10,7 @@ plugins:
 provider:
   name: aws
   profile: serverless
-  runtime: nodejs22.x
+  runtime: nodejs20.x
   stage: ${opt:stage, 'dev'}
   region: ${opt:region, 'us-east-1'}
 
