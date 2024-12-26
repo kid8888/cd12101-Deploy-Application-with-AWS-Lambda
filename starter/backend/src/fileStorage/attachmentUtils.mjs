@@ -18,10 +18,10 @@ export async function getUploadUrl(todoId) {
     if (!todoId) {
         throw new Error('Todo ID is required to generate an upload URL');
     }
-
+    const key = `${todoId}/${originalFileName}`;
     const command = new PutObjectCommand({
         Bucket: bucketName,
-        Key: todoId
+        Key: key
     });
 
     try {
